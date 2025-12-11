@@ -50,6 +50,17 @@ CLI-only backend server exposing an OpenAI-compatible chat completion API, desig
    - `OPENAI_BASE_URL=http://localhost:8000/v1`
    - `OPENAI_API_KEY` set to any non-empty string.
 
+### Smoke test
+
+After the server is running, you can run a simple smoke test from another terminal:
+
+```bash
+python -m tests.smoke_chat_completion
+```
+
+This script sends a small chat completion request to `http://127.0.0.1:$PORT/v1/chat/completions` and checks that the response has a valid OpenAI-style structure and a non-empty assistant message.
+
+
 ### Notes
 
 - The default implementation uses HuggingFace `transformers`. You can swap in vLLM or another backend inside `app/model.py`.
