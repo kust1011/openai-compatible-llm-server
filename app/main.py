@@ -84,18 +84,15 @@ def chat_completions(req: ChatCompletionRequest) -> ChatCompletionResponse:
 )
 def vision_color_palette(req: VisionColorAnalysisRequest) -> VisionColorAnalysisResponse:
     """
-    Run a color analysis (or other vision-language task) using Qwen2.5-VL.
+    Run a generic vision-language generation task using Qwen2.5-VL.
 
-    The default prompt is tuned for personal color analysis and expects the
-    model to return a compact JSON-style description, but callers can provide
-    any prompt they like.
+    Callers should provide a prompt that clearly specifies the task and
+    desired output format. If no prompt is provided, the model is asked to
+    briefly describe the main contents of the image.
     """
     default_prompt = (
-        "You are a professional personal color analyst. "
-        "Analyze the person's skin tone, hair, and eyes in this portrait image. "
-        "Return a concise JSON object with keys: "
-        "season, best_colors, avoid_colors, notes. "
-        "Use short English color names and keep the response machine friendly."
+        "You are a concise vision-language assistant. "
+        "Describe the main contents of the image in a few sentences."
     )
     prompt = req.prompt or default_prompt
 

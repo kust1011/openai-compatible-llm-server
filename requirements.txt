@@ -7,3 +7,4 @@ torch
 requests
 accelerate
 Pillow
+torchvision

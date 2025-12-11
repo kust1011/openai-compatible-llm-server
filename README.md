@@ -1,6 +1,6 @@
 ## OpenAI-Compatible Local LLM Server
 
-CLI-only backend server exposing an OpenAI-compatible chat completion API, designed to run a local LLM (e.g. HuggingFace model). It can serve as a drop-in backend for any OpenAI-style client, including the Agentic Outfit Stylist frontend.
+CLI-only backend server exposing an OpenAI-compatible chat completion API, designed to run a local LLM (e.g. HuggingFace model). It can serve as a drop-in backend for any OpenAI-style client that speaks the OpenAI API.
 
 ### Features
 
