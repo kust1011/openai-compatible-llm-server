@@ -15,11 +15,13 @@ class LocalChatModel:
             self.settings.model_id,
             device_map="auto" if self.settings.device == "cuda" else None,
         )
+        # When using accelerate with device_map="auto", the model is already
+        # placed on the appropriate devices and the pipeline must not receive
+        # an explicit device argument.
         self.pipe = pipeline(
             "text-generation",
             model=self.model,
             tokenizer=self.tokenizer,
-            device=0 if self.settings.device == "cuda" else -1,
         )
 
     def generate(self, messages: List[dict], max_new_tokens: int | None = None, temperature: float | None = None) -> str:
@@ -62,4 +64,3 @@ def get_model() -> LocalChatModel:
     if local_model is None:
         local_model = LocalChatModel()
     return local_model
-
