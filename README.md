@@ -5,6 +5,7 @@ CLI-only backend server exposing an OpenAI-compatible chat completion API, desig
 ### Features
 
 - OpenAI-style `POST /v1/chat/completions` endpoint.
+- Optional Qwen2.5-VL-7B-Instruct endpoint for vision-language tasks such as color analysis.
 - Uses environment variables for model and runtime settings.
 - Intended to wrap a local HuggingFace model (GPU or CPU).
 
@@ -12,8 +13,9 @@ CLI-only backend server exposing an OpenAI-compatible chat completion API, desig
 
 - `app/`
   - `config.py` – settings and environment handling.
-  - `model.py` – model loading and text generation.
-  - `main.py` – FastAPI app with OpenAI-like API.
+  - `model.py` – text model loading and generation.
+  - `vlm_qwen.py` – Qwen2.5-VL-7B-Instruct vision-language adapter.
+  - `main.py` – FastAPI app exposing text and vision endpoints.
 - `.env.example` – example runtime configuration.
 
 ### Setup
@@ -60,6 +62,35 @@ python -m tests.smoke_chat_completion
 
 This script sends a small chat completion request to `http://127.0.0.1:$PORT/v1/chat/completions` and checks that the response has a valid OpenAI-style structure and a non-empty assistant message.
 
+
+### Vision endpoint (Qwen2.5-VL)
+
+If you configure `VLM_MODEL_ID` to a Qwen2.5-VL checkpoint (for example `Qwen/Qwen2.5-VL-7B-Instruct`), the server exposes a simple vision-language endpoint:
+
+```bash
+POST /v1/vision/color_palette
+```
+
+Request body:
+
+```json
+{
+  "image_path": "/abs/path/to/portrait.jpg",
+  "prompt": "Optional custom prompt for the VLM",
+  "temperature": 0.2,
+  "max_tokens": 512
+}
+```
+
+The response contains a single field:
+
+```json
+{
+  "result": "<model-generated text>"
+}
+```
+
+By default, if you omit `prompt`, the server sends a built-in instruction for personal color analysis and expects the model to return a compact JSON description of the user's color season and recommended palettes.
 
 ### Notes
 

@@ -12,6 +12,10 @@ class Settings:
     temperature: float
     host: str
     port: int
+    vlm_model_id: str
+    vlm_device: str
+    vlm_max_new_tokens: int
+    vlm_temperature: float
 
 
 def load_settings() -> Settings:
@@ -35,4 +39,10 @@ def load_settings() -> Settings:
         temperature=float(os.getenv("TEMPERATURE", "0.7")),
         host=os.getenv("HOST", "0.0.0.0"),
         port=int(os.getenv("PORT", "8000")),
+        vlm_model_id=os.getenv(
+            "VLM_MODEL_ID", "Qwen/Qwen2.5-VL-7B-Instruct"
+        ),
+        vlm_device=os.getenv("VLM_DEVICE", os.getenv("DEVICE", "cuda")),
+        vlm_max_new_tokens=int(os.getenv("VLM_MAX_NEW_TOKENS", "512")),
+        vlm_temperature=float(os.getenv("VLM_TEMPERATURE", "0.2")),
     )
