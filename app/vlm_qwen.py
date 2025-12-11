@@ -1,19 +1,13 @@
 from __future__ import annotations
 
-"""
-Qwen2.5-VL vision-language model adapter.
-
-This module provides a small wrapper around a local Qwen2.5-VL-7B-Instruct
-checkpoint for single-image + text generation. It is wired into the API
-as a generic vision completion endpoint so other projects can reuse it.
-"""
+"""Qwen2.5-VL vision-language model adapter."""
 
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
 from PIL import Image
-from transformers import AutoModelForCausalLM, AutoProcessor
+from transformers import AutoModelForVision2Seq, AutoProcessor
 
 from .config import load_settings
 
@@ -38,18 +32,12 @@ def _load_qwen_settings() -> QwenVLSettings:
 
 
 class QwenVisionModel:
-    """
-    Wrapper around Qwen2.5-VL-7B-Instruct for simple vision + text generation.
-
-    This implementation assumes the checkpoint is compatible with
-    `AutoProcessor` and `AutoModelForCausalLM` from `transformers`. If you use
-    a different Qwen variant, adjust the model class or preprocessing here.
-    """
+    """Small wrapper around Qwen2.5-VL for image + text generation."""
 
     def __init__(self) -> None:
         self.settings = _load_qwen_settings()
         self.processor = AutoProcessor.from_pretrained(self.settings.model_id)
-        self.model = AutoModelForCausalLM.from_pretrained(
+        self.model = AutoModelForVision2Seq.from_pretrained(
             self.settings.model_id,
             device_map="auto" if self.settings.device == "cuda" else None,
         )
@@ -61,12 +49,7 @@ class QwenVisionModel:
         max_new_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
     ) -> str:
-        """
-        Run a single-image + text generation with Qwen2.5-VL.
-
-        The prompt should instruct the model to return a compact, parseable
-        answer (e.g., JSON for color analysis).
-        """
+        """Run a single-image + text generation call."""
         path = Path(image_path)
         if not path.exists():
             raise FileNotFoundError(f"Image not found: {image_path}")
@@ -76,8 +59,27 @@ class QwenVisionModel:
         max_tokens = max_new_tokens or self.settings.max_new_tokens
         temp = temperature if temperature is not None else self.settings.temperature
 
+        # Qwen2.5-VL expects a chat-style prompt with an image placeholder,
+        # built via `apply_chat_template`. This ensures that image features
+        # and image tokens are aligned.
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "image"},
+                    {"type": "text", "text": prompt},
+                ],
+            }
+        ]
+
+        chat_prompt = self.processor.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True,
+        )
+
         inputs = self.processor(
-            text=[prompt],
+            text=[chat_prompt],
             images=[image],
             return_tensors="pt",
         )
@@ -108,4 +110,3 @@ def get_qwen_vision_model() -> QwenVisionModel:
     if _qwen_vision_model is None:
         _qwen_vision_model = QwenVisionModel()
     return _qwen_vision_model
-
