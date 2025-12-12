@@ -37,10 +37,23 @@ class QwenVisionModel:
     def __init__(self) -> None:
         self.settings = _load_qwen_settings()
         self.processor = AutoProcessor.from_pretrained(self.settings.model_id)
-        self.model = AutoModelForVision2Seq.from_pretrained(
-            self.settings.model_id,
-            device_map="auto" if self.settings.device == "cuda" else None,
-        )
+        device = self.settings.device
+
+        # When device is exactly "cuda", let accelerate infer a sharded
+        # device_map across all visible GPUs. For any other value
+        # (e.g. "cuda:0", "cuda:1", "cpu"), load on that device only.
+        if device == "cuda":
+            self.model = AutoModelForVision2Seq.from_pretrained(
+                self.settings.model_id,
+                device_map="auto",
+                torch_dtype="auto",
+            )
+        else:
+            self.model = AutoModelForVision2Seq.from_pretrained(
+                self.settings.model_id,
+                torch_dtype="auto",
+            )
+            self.model.to(device)
 
     def generate_from_image(
         self,
@@ -84,8 +97,11 @@ class QwenVisionModel:
             return_tensors="pt",
         )
 
-        if self.settings.device == "cuda":
-            inputs = {k: v.to("cuda") for k, v in inputs.items()}
+        device = self.settings.device
+        # Move inputs to the configured device when using CUDA or similar
+        # accelerators. For CPU, tensors stay on CPU.
+        if device.startswith("cuda") or device == "mps":
+            inputs = {k: v.to(device) for k, v in inputs.items()}
 
         generated_ids = self.model.generate(
             **inputs,

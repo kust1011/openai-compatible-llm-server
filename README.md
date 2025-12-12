@@ -52,6 +52,17 @@ CLI-only backend server exposing an OpenAI-compatible chat completion API, desig
    - `OPENAI_BASE_URL=http://localhost:8000/v1`
    - `OPENAI_API_KEY` set to any non-empty string.
 
+### Device configuration
+
+- `DEVICE` controls where the text LLM is loaded. Valid values include:
+  - `cpu`, `cuda`, `cuda:0`, `cuda:1`, `mps`, etc.
+- `VLM_DEVICE` controls where the vision-language model is loaded and can be
+  set independently from `DEVICE`.
+- When `DEVICE=cuda` (without an index), the text model uses
+  `device_map="auto"` to let `accelerate` shard across all visible GPUs.
+- When you specify an explicit device (for example `DEVICE=cuda:0` and
+  `VLM_DEVICE=cuda:1`), each model is loaded fully on that device only.
+
 ### Smoke test
 
 After the server is running, you can run a simple smoke test from another terminal:

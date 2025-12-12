@@ -11,13 +11,29 @@ class LocalChatModel:
     def __init__(self) -> None:
         self.settings = load_settings()
         self.tokenizer = AutoTokenizer.from_pretrained(self.settings.model_id)
-        self.model = AutoModelForCausalLM.from_pretrained(
-            self.settings.model_id,
-            device_map="auto" if self.settings.device == "cuda" else None,
-        )
+        device = self.settings.device
+
+        # When device is exactly "cuda", let accelerate infer a sharded
+        # device_map across all visible GPUs. For any other value
+        # (e.g. "cuda:0", "cuda:1", "cpu", "mps"), load on that device only.
+        if device == "cuda":
+            self.model = AutoModelForCausalLM.from_pretrained(
+                self.settings.model_id,
+                device_map="auto",
+                torch_dtype="auto",
+            )
+        else:
+            self.model = AutoModelForCausalLM.from_pretrained(
+                self.settings.model_id,
+                torch_dtype="auto",
+            )
+            # This supports explicit devices like "cuda:0", "cuda:1", "cpu", "mps".
+            self.model.to(device)
+
         # When using accelerate with device_map="auto", the model is already
         # placed on the appropriate devices and the pipeline must not receive
-        # an explicit device argument.
+        # an explicit device argument. For single-device placement, the model's
+        # own device is respected by the pipeline.
         self.pipe = pipeline(
             "text-generation",
             model=self.model,
